@@ -16,14 +16,20 @@ import json
 pp = pprint.PrettyPrinter(indent=4)
 
 # parse commandline and get appropriate passwords
+#    accepted format is python pltJiraCrossInteg.py -jusername:password -pusername:password
 parser = argparse.ArgumentParser(description='Get user/password information for both JIRA & Plutora.')
-parser.add_argument('integers', metavar='N', type=int, nargs='+',
-                    help='an integer for the accumulator')
-parser.add_argument('--sum', dest='accumulate', action='store_const',
-                    const=sum, default=max,
-                    help='sum the integers (default: find the max)')
 
-args = parser.parse_args()
+# help='JIRA and Plutora logins (username:password)')
+parser.add_argument('-j', action='store', dest='jiraUnP',
+                    help='JIRA username:password')
+parser.add_argument('-p', action='store', dest='pltUnP',
+                    help='Plutora Jusername:password')
+results = parser.parse_args()
+jiraUsername = results.jiraUnP.split(':')[0].replace('@', '%40')
+jiraPassword = results.jiraUnP.split(':')[1]
+PlutoraUsername = results.pltUnP.split(':')[0].replace('@', '%40')
+PlutoraPassword = results.pltUnP.split(':')[1]
+
 
 # ClientId & Secret from manual setup of Plutora Oauth authorization.
 pClientId = r'E7EJZTL67OAURNKMKOKPD5W7ZE'
@@ -31,7 +37,9 @@ pClientSecret = r'SMQVSO7HHA2EBMVT6ICQF4RNDQ'
 
 # Setup for Get authorization-token
 authTokenUrl = "https://usoauth.plutora.com/oauth/token"
-payload = "client_id=E7EJZTL67OAURNKMKOKPD5W7ZE&client_secret=SMQVSO7HHA2EBMVT6ICQF4RNDQ&grant_type=password&username=john.singer%40plutora.com&password=jps53.jps53&="
+payload = 'client_id=' + pClientId + '&client_secret=' + pClientSecret + '&' + 'grant_type=password&username='
+payload = payload + PlutoraUsername + '&password=' + PlutoraPassword + '&='
+oldpayload = "client_id=E7EJZTL67OAURNKMKOKPD5W7ZE&client_secret=SMQVSO7HHA2EBMVT6ICQF4RNDQ&grant_type=password&username=john.singer%40plutora.com&password=jps53.jps53&="
 headers = {
     'content-type': "application/x-www-form-urlencoded",
     'cache-control': "no-cache",
@@ -62,7 +70,7 @@ headers = {
 }
 
 # Make the call to connect to local JIRA instance
-r = requests.get(jiraURL, auth=('john.singer','jps.jps' ))
+r = requests.get(jiraURL, auth=(jiraUsername, jiraPassword))
 if r.status_code != 200:
     print r.status_code
     print('\npltJiraCrossInteg.py: Sorry! - [failed on JIRA get]')
